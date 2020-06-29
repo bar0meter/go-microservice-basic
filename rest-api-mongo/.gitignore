@@ -1,7 +1,0 @@
-.idea
-*.iml
-*.tmpl
-tmp
-*.env
-tasks.txt
-logs
