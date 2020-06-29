@@ -1,7 +1,0 @@
-time="2020-06-29T23:50:58+05:30" level=info msg="Starting the application..." func=github.com/frost060/rest-api-mongo/logging.Info file="/Users/frost060/go/src/github.com/frost060/rest-api-mongo/logging/logger.go:37"
-time="2020-06-29T23:50:58+05:30" level=info msg="Connecting to mongodb..." func=github.com/frost060/rest-api-mongo/logging.Info file="/Users/frost060/go/src/github.com/frost060/rest-api-mongo/logging/logger.go:37"
-time="2020-06-29T23:50:58+05:30" level=info msg="Successfully connected to mongodb..." func=github.com/frost060/rest-api-mongo/logging.Info file="/Users/frost060/go/src/github.com/frost060/rest-api-mongo/logging/logger.go:37"
-time="2020-06-29T23:50:58+05:30" level=info msg="Loading configs from .env file" func=github.com/frost060/rest-api-mongo/logging.Info file="/Users/frost060/go/src/github.com/frost060/rest-api-mongo/logging/logger.go:37"
-time="2020-06-29T23:50:58+05:30" level=info msg="Successfully loaded configs" func=github.com/frost060/rest-api-mongo/logging.Info file="/Users/frost060/go/src/github.com/frost060/rest-api-mongo/logging/logger.go:37"
-time="2020-06-29T23:50:58+05:30" level=info msg="Starting server on port 9090" func=github.com/frost060/rest-api-mongo/logging.Info file="/Users/frost060/go/src/github.com/frost060/rest-api-mongo/logging/logger.go:37"
-time="2020-06-29T23:51:03+05:30" level=info msg="Got signal:%!(EXTRA syscall.Signal=interrupt)" func=github.com/frost060/rest-api-mongo/logging.Info file="/Users/frost060/go/src/github.com/frost060/rest-api-mongo/logging/logger.go:37"
