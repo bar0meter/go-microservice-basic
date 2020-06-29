@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package="./notifications";
+
+// protoc -I protos/ protos/message-service.proto --go_out=plugins=grpc:protos/
+// For now just adding to queue. (Later on we can add to queue based on priorities)
+service Notification {
+  // rpc AddToQueue(MessageRequest) returns (MessageResponse);
+  rpc SendNotification(MessageRequest) returns (MessageResponse);
+}
+
+message MessageRequest {
+  NotificationType type = 1;
+  string to = 2;
+  string msg = 3;
+  string subject = 4;
+}
+
+message MessageResponse {
+  bool success = 1;
+}
+
+// Later add SMS, Push, etc.
+enum NotificationType {
+  EMAIL=0;
+}
