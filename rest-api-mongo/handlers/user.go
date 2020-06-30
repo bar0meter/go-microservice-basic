@@ -6,21 +6,23 @@ import (
 	"strings"
 	"time"
 
+	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
+
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/configs"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/models"
-	"github.com/frost060/go-microservice-basic/rest-api-mongo/services/email"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/utils"
 	"github.com/gorilla/mux"
 )
 
 type UserHandler struct {
-	userRepo     models.UserRepository
-	serverConfig *configs.Config
+	userRepo         models.UserRepository
+	serverConfig     *configs.Config
+	messagingService protos.NotificationClient
 }
 
 func NewUserHandler(
-	userRepo models.UserRepository, serverConfig *configs.Config) *UserHandler {
-	return &UserHandler{userRepo, serverConfig}
+	userRepo models.UserRepository, serverConfig *configs.Config, mss protos.NotificationClient) *UserHandler {
+	return &UserHandler{userRepo, serverConfig, mss}
 }
 
 func (u *UserHandler) GetUser(rw http.ResponseWriter, r *http.Request) {
@@ -162,10 +164,16 @@ func (u *UserHandler) RequestResetPassword(rw http.ResponseWriter, r *http.Reque
 
 	templatePath := u.serverConfig.RootPath + "/web/templates/forgot_password.html"
 	html := utils.GenerateResetPasswordMail(username, name, resetTag, "http://"+r.Host, templatePath)
-	body := email.GetHtmlBody(username, "Reset Password from TEST", html)
-	ok, err := email.SendMail(body, u.serverConfig.SendGrid.ApiKey)
 
-	if err != nil || !ok {
+	message := &protos.MessageRequest{
+		Type:    protos.NotificationType_EMAIL,
+		Msg:     html,
+		Subject: "Reset Password from TEST Service",
+		To:      username,
+	}
+	resp, err := u.messagingService.SendNotification(r.Context(), message)
+
+	if err != nil || !resp.Success {
 		http.Error(rw, "Error occurred while "+
 			"sending reset password mail", http.StatusInternalServerError)
 		return
@@ -217,10 +225,17 @@ func (u *UserHandler) RequestVerifyEmail(rw http.ResponseWriter, r *http.Request
 
 	templatePath := u.serverConfig.RootPath + "/web/templates/verify_email.html"
 	html := utils.GenerateVerifyEmailMail(tagClaim.Identity, name, resetTag, "http://"+r.Host, templatePath)
-	body := email.GetHtmlBody(tagClaim.Identity, "Verify Email Address from TEST", html)
-	ok, err := email.SendMail(body, u.serverConfig.SendGrid.ApiKey)
 
-	if err != nil || !ok {
+	message := &protos.MessageRequest{
+		Type:    protos.NotificationType_EMAIL,
+		Msg:     html,
+		Subject: "Verify Password from TEST Service",
+		To:      tagClaim.Identity,
+	}
+
+	resp, err := u.messagingService.SendNotification(r.Context(), message)
+
+	if err != nil || !resp.Success {
 		http.Error(rw, "Error occurred while "+
 			"sending reset password mail", http.StatusInternalServerError)
 		return

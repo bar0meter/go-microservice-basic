@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
-	log "github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
+	"google.golang.org/grpc"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	log "github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/configs"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/routes"
@@ -14,6 +16,8 @@ import (
 
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/db"
 	gohandlers "github.com/gorilla/handlers"
+
+	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
 )
 
 func main() {
@@ -30,7 +34,18 @@ func main() {
 	serverConfigs := configs.NewConfig()
 	log.Info("Successfully loaded configs")
 
-	router := routes.SetupRoutes(repos, serverConfigs)
+	// Message Service Client
+	conn, err := grpc.Dial("localhost:9092", grpc.WithInsecure())
+	if err != nil {
+		log.Error("Error while connecting to messaging service")
+		os.Exit(1)
+	}
+
+	defer conn.Close()
+
+	mssClient := protos.NewNotificationClient(conn)
+
+	router := routes.SetupRoutes(repos, serverConfigs, mssClient)
 
 	// CORS
 	ch := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))

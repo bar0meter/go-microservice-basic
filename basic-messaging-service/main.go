@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/frost060/go-microservice-basic/basic-messaging-service/db"
 	log "github.com/frost060/go-microservice-basic/basic-messaging-service/logging"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc/reflection"
@@ -9,7 +10,7 @@ import (
 	"os"
 
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/configs"
-	"github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
+	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/server"
 	"google.golang.org/grpc"
 )
@@ -28,10 +29,12 @@ func main() {
 	gs := grpc.NewServer()
 	log.Info("Created new grpc server...")
 
-	ms := server.NewMessageService(serverConfig)
+	redis := db.NewRedisClient(serverConfig)
+
+	ms := server.NewMessageService(serverConfig, redis)
 	log.Info("Create new message service...")
 
-	notifications.RegisterNotificationServer(gs, ms)
+	protos.RegisterNotificationServer(gs, ms)
 	log.Info("Successfully registered notification service")
 
 	reflection.Register(gs)

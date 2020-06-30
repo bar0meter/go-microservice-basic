@@ -1,6 +1,7 @@
 package routes
 
 import (
+	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
 	"net/http"
 
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/configs"
@@ -12,12 +13,12 @@ import (
 )
 
 // SetupRoutes , sets up all the routes and returns router instance
-func SetupRoutes(repos *db.Repositories, serverConfigs *configs.Config) *mux.Router {
+func SetupRoutes(repos *db.Repositories, serverConfigs *configs.Config, mss protos.NotificationClient) *mux.Router {
 	router := mux.NewRouter()
 
 	// Handlers
-	todoHandler := handlers.NewTodoHandler(repos.TodoRepo)
-	userHandler := handlers.NewUserHandler(repos.UserRepo, serverConfigs)
+	todoHandler := handlers.NewTodoHandler(repos.TodoRepo, mss)
+	userHandler := handlers.NewUserHandler(repos.UserRepo, serverConfigs, mss)
 	googleHandler := social_logins.NewGoogleHandler(serverConfigs.Google)
 	jwtMiddleWare := middlewares.NewJWTMiddleWare(serverConfigs.JWT)
 

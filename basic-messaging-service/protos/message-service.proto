@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 option go_package="./notifications";
 
 // protoc -I protos/ protos/message-service.proto --go_out=plugins=grpc:protos/
@@ -7,6 +9,8 @@ option go_package="./notifications";
 service Notification {
   // rpc AddToQueue(MessageRequest) returns (MessageResponse);
   rpc SendNotification(MessageRequest) returns (MessageResponse);
+  rpc AddToQueue(MessageRequest) returns (MessageResponse);
+  rpc RemoveFromQueue(google.protobuf.Empty) returns (MessageRequest);
 }
 
 message MessageRequest {

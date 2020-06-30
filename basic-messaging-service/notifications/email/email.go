@@ -5,9 +5,14 @@ import (
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/notifications"
 )
 
-// Email Service Providers
+// Email Service Providers Ordinal
 const (
 	SendGrid = 0
+)
+
+// Email Service Providers
+const (
+	SENDGRID = "sendgrid"
 )
 
 // Dispatcher => Dispatcher Factory For all Email dispatcher
@@ -23,7 +28,7 @@ func Dispatcher(sender int, to, subject, msg string, config *configs.ServerConfi
 // GetProvider => Returns provider ordinal
 func GetProvider(sender string) int {
 	switch sender {
-	case "sendgrid":
+	case SENDGRID:
 		return SendGrid
 	default:
 		return -1

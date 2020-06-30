@@ -3,6 +3,7 @@ package configs
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 // SendGridConfig => holds all the sendgrid required configurations
@@ -12,14 +13,21 @@ type SendGridConfig struct {
 
 // ServerConfig => Has all the servers configs (API keys, Client Secret, etc)
 type ServerConfig struct {
-	SendGrid *SendGridConfig
-	RootPath string
+	SendGrid  *SendGridConfig
+	RootPath  string
 	Providers *Providers
+	Redis     *RedisConfig
 }
 
 // Providers => Default notifications providers (Email,SMS) for server
 type Providers struct {
 	Email string
+}
+
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
 }
 
 // NewConfig returns a new Config struct
@@ -28,11 +36,13 @@ func NewConfig() *ServerConfig {
 	sendGrid := NewSendGridConfig()
 	rootPath, _ := filepath.Abs("./")
 	providers := NewProviders()
+	redis := NewRedisConfig()
 
 	return &ServerConfig{
-		SendGrid: sendGrid,
-		RootPath: rootPath,
+		SendGrid:  sendGrid,
+		RootPath:  rootPath,
 		Providers: providers,
+		Redis:     redis,
 	}
 }
 
@@ -48,6 +58,21 @@ func NewSendGridConfig() *SendGridConfig {
 	apiKey := getEnv("SENDGRID_API_KEY", "")
 	return &SendGridConfig{
 		APIKey: apiKey,
+	}
+}
+
+func NewRedisConfig() *RedisConfig {
+	address := getEnv("REDIS_SERVER_ADDRESS", "localhost:6379")
+	password := getEnv("REDIS_SERVER_PASSWORD", "")
+	db, err := strconv.ParseInt(getEnv("REDIS_SERVER_DB", "0"), 10, 64)
+	if err != nil {
+		db = 0
+	}
+
+	return &RedisConfig{
+		Addr:     address,
+		Password: password,
+		DB:       int(db),
 	}
 }
 

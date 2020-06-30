@@ -5,7 +5,7 @@ import (
 	logging "log"
 	"os"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -25,7 +25,7 @@ func init() {
 		Formatter:    new(logrus.TextFormatter),
 		Hooks:        make(logrus.LevelHooks),
 		Level:        logrus.DebugLevel,
-		ReportCaller: true,
+		ReportCaller: false,
 	}
 
 	mw := io.MultiWriter(os.Stdout, f)

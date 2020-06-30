@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/frost060/go-microservice-basic/basic-messaging-service/db"
+	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/configs"
 	log "github.com/frost060/go-microservice-basic/basic-messaging-service/logging"
@@ -15,16 +17,18 @@ import (
 // MessageService => Sends Notificaiotns
 type MessageService struct {
 	config *configs.ServerConfig
+	Redis  *db.Redis
 }
 
 // NewMessageService => returns a new message service
-func NewMessageService(config *configs.ServerConfig) *MessageService {
-	return &MessageService{config}
+func NewMessageService(config *configs.ServerConfig, redis *db.Redis) *MessageService {
+	return &MessageService{config, redis}
 }
 
 // SendNotification => Sends a notification without processing (dont add to queue)
 // Used for forgot password, verify account, login OTP, etc.
-func (ms *MessageService) SendNotification(ctx context.Context, req *protos.MessageRequest) (*protos.MessageResponse, error) {
+func (ms *MessageService) SendNotification(
+	ctx context.Context, req *protos.MessageRequest) (*protos.MessageResponse, error) {
 	messageType := req.GetType()
 
 	var dispatcher notifications.Dispatcher
@@ -52,4 +56,18 @@ func (ms *MessageService) SendNotification(ctx context.Context, req *protos.Mess
 	return &protos.MessageResponse{
 		Success: success,
 	}, err
+}
+
+func (ms *MessageService) AddToQueue(
+	ctx context.Context, req *protos.MessageRequest) (*protos.MessageResponse, error) {
+
+	ok, err := ms.Redis.Push(ctx, "default", req)
+
+	return &protos.MessageResponse{
+		Success: ok,
+	}, err
+}
+
+func (ms *MessageService) RemoveFromQueue(ctx context.Context, _ *empty.Empty) (*protos.MessageRequest, error) {
+	return nil, nil
 }
