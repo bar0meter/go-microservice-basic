@@ -69,5 +69,5 @@ func (ms *MessageService) AddToQueue(
 }
 
 func (ms *MessageService) RemoveFromQueue(ctx context.Context, _ *empty.Empty) (*protos.MessageRequest, error) {
-	return nil, nil
+	return ms.Redis.Pop(ctx, "default")
 }

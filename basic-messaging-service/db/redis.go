@@ -46,11 +46,11 @@ func (rc *Redis) Pop(ctx context.Context, key string) (*protos.MessageRequest, e
 		return nil, result.Err()
 	}
 
-	var message *protos.MessageRequest
-	err := proto.UnmarshalText(result.Val(), message)
+	var message protos.MessageRequest
+	err := proto.UnmarshalText(result.Val(), &message)
 	if err != nil {
 		return nil, err
 	}
 
-	return message, nil
+	return &message, nil
 }
