@@ -3,23 +3,23 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/configs"
+	log "github.com/frost060/go-microservice-basic/basic-messaging-service/logging"
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/notifications"
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/notifications/email"
 	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
-	"github.com/hashicorp/go-hclog"
 )
 
 // MessageService => Sends Notificaiotns
 type MessageService struct {
-	log    hclog.Logger
 	config *configs.ServerConfig
 }
 
 // NewMessageService => returns a new message service
-func NewMessageService(l hclog.Logger, config *configs.ServerConfig) *MessageService {
-	return &MessageService{l, config}
+func NewMessageService(config *configs.ServerConfig) *MessageService {
+	return &MessageService{config}
 }
 
 // SendNotification => Sends a notification without processing (dont add to queue)
@@ -34,7 +34,8 @@ func (ms *MessageService) SendNotification(ctx context.Context, req *protos.Mess
 
 	switch messageType {
 	case protos.NotificationType_EMAIL:
-		dispatcher = email.Dispatcher(email.SendGrid, to, subject, msg, ms.config)
+		dispatcher = email.Dispatcher(
+			email.GetProvider(ms.config.Providers.Email), to, subject, msg, ms.config)
 	default:
 		dispatcher = nil
 	}
@@ -46,6 +47,8 @@ func (ms *MessageService) SendNotification(ctx context.Context, req *protos.Mess
 	}
 
 	success, err := dispatcher.Dispatch()
+	log.Info(fmt.Sprintf("Success: %v, Error: %v", success, err))
+
 	return &protos.MessageResponse{
 		Success: success,
 	}, err

@@ -14,6 +14,12 @@ type SendGridConfig struct {
 type ServerConfig struct {
 	SendGrid *SendGridConfig
 	RootPath string
+	Providers *Providers
+}
+
+// Providers => Default notifications providers (Email,SMS) for server
+type Providers struct {
+	Email string
 }
 
 // NewConfig returns a new Config struct
@@ -21,10 +27,19 @@ type ServerConfig struct {
 func NewConfig() *ServerConfig {
 	sendGrid := NewSendGridConfig()
 	rootPath, _ := filepath.Abs("./")
+	providers := NewProviders()
 
 	return &ServerConfig{
 		SendGrid: sendGrid,
 		RootPath: rootPath,
+		Providers: providers,
+	}
+}
+
+func NewProviders() *Providers {
+	email := getEnv("DEFAULT_EMAIL_PROVIDER", "sendgrid")
+	return &Providers{
+		Email: email,
 	}
 }
 
