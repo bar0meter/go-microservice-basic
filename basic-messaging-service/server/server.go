@@ -101,27 +101,25 @@ func NewWorkerPool(noOfRoutines int) *WorkerPool {
 func StartDispatchRedis(noOfRoutines int, redis *db.Redis, messageService *MessageService) {
 	workerPool := NewWorkerPool(noOfRoutines)
 	for {
-		select {
-		case worker := <-workerPool.Pool:
-			go func() {
-				ctx := context.Background()
-				message, err := redis.Pop(ctx, "default")
-				if err != nil {
-					time.Sleep(1 * time.Minute)
-					workerPool.Pool <- worker
-					return
-				}
-
-				resp, err := messageService.SendNotification(ctx, message)
-				if err != nil || !resp.Success {
-					log.Error("Error occurred while dispatching message, pushing back to redis")
-					_, _ = redis.Push(ctx, "default", message)
-				} else {
-					log.Info("Successfully sent message, by worker: %d", worker.ID)
-				}
-
+		worker := <-workerPool.Pool
+		go func() {
+			ctx := context.Background()
+			message, err := redis.Pop(ctx, "default")
+			if err != nil {
+				time.Sleep(1 * time.Minute)
 				workerPool.Pool <- worker
-			}()
-		}
+				return
+			}
+
+			resp, err := messageService.SendNotification(ctx, message)
+			if err != nil || !resp.Success {
+				log.Error("Error occurred while dispatching message, pushing back to redis")
+				_, _ = redis.Push(ctx, "default", message)
+			} else {
+				log.Info("Successfully sent message, by worker: %d", worker.ID)
+			}
+
+			workerPool.Pool <- worker
+		}()
 	}
 }
