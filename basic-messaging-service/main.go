@@ -39,6 +39,8 @@ func main() {
 
 	reflection.Register(gs)
 
+	go server.StartDispatchRedis(2, redis, ms)
+
 	log.Info("Notification service running on port: 9092")
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", 9092))
 	if err != nil {

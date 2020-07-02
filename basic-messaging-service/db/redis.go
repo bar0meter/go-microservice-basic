@@ -3,12 +3,12 @@ package db
 import (
 	"context"
 	"errors"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/golang/protobuf/proto"
 
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/configs"
 	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
-	"github.com/go-redis/redis/v8"
 )
 
 type Redis struct {
@@ -49,6 +49,9 @@ func (rc *Redis) Pop(ctx context.Context, key string) (*protos.MessageRequest, e
 	var message protos.MessageRequest
 	err := proto.UnmarshalText(result.Val(), &message)
 	if err != nil {
+		// Error occurred while marshalling then push ti back to redis
+		// TODO: Here check for error type. If message is bad then need to discard the message.
+		rc.client.LPush(ctx, key, result.Val())
 		return nil, err
 	}
 

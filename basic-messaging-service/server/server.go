@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/db"
 	"github.com/golang/protobuf/ptypes/empty"
 
@@ -70,4 +72,56 @@ func (ms *MessageService) AddToQueue(
 
 func (ms *MessageService) RemoveFromQueue(ctx context.Context, _ *empty.Empty) (*protos.MessageRequest, error) {
 	return ms.Redis.Pop(ctx, "default")
+}
+
+type Worker struct {
+	ID int
+}
+
+type WorkerPool struct {
+	Pool chan Worker
+}
+
+func NewWorkerPool(noOfRoutines int) *WorkerPool {
+	workerPool := make(chan Worker, noOfRoutines)
+	for i := 0; i < noOfRoutines; i++ {
+		worker := &Worker{
+			ID: i,
+		}
+		log.Info("Created worker with id %d", i)
+		workerPool <- *worker
+	}
+
+	return &WorkerPool{
+		Pool: workerPool,
+	}
+}
+
+// https://play.golang.org/p/HovNRgp6FxH
+func StartDispatchRedis(noOfRoutines int, redis *db.Redis, messageService *MessageService) {
+	workerPool := NewWorkerPool(noOfRoutines)
+	for {
+		select {
+		case worker := <-workerPool.Pool:
+			go func() {
+				ctx := context.Background()
+				message, err := redis.Pop(ctx, "default")
+				if err != nil {
+					time.Sleep(1 * time.Minute)
+					workerPool.Pool <- worker
+					return
+				}
+
+				resp, err := messageService.SendNotification(ctx, message)
+				if err != nil || !resp.Success {
+					log.Error("Error occurred while dispatching message, pushing back to redis")
+					_, _ = redis.Push(ctx, "default", message)
+				} else {
+					log.Info("Successfully sent message, by worker: %d", worker.ID)
+				}
+
+				workerPool.Pool <- worker
+			}()
+		}
+	}
 }
