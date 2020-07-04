@@ -1,26 +1,29 @@
 package routes
 
 import (
-	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
 	"net/http"
+
+	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
 
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/configs"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/db"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/handlers"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/handlers/social_logins"
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/middlewares"
 	"github.com/gorilla/mux"
 )
 
 // SetupRoutes , sets up all the routes and returns router instance
-func SetupRoutes(repos *db.Repositories, serverConfigs *configs.Config, mss protos.NotificationClient) *mux.Router {
+func SetupRoutes(
+	repos *db.Repositories, serverConfigs *configs.Config, mss protos.NotificationClient, log *logging.LogWrapper) *mux.Router {
 	router := mux.NewRouter()
 
 	// Handlers
-	todoHandler := handlers.NewTodoHandler(repos.TodoRepo, mss)
-	userHandler := handlers.NewUserHandler(repos.UserRepo, serverConfigs, mss)
-	googleHandler := social_logins.NewGoogleHandler(serverConfigs.Google)
-	jwtMiddleWare := middlewares.NewJWTMiddleWare(serverConfigs.JWT)
+	todoHandler := handlers.NewTodoHandler(repos.TodoRepo, log, mss)
+	userHandler := handlers.NewUserHandler(repos.UserRepo, log, serverConfigs, mss)
+	googleHandler := social_logins.NewGoogleHandler(serverConfigs.Google, log)
+	jwtMiddleWare := middlewares.NewJWTMiddleWare(serverConfigs.JWT, log)
 
 	router.HandleFunc("/login", userHandler.PerformLogin).Methods(http.MethodPost)
 	router.HandleFunc("/signup", userHandler.NewUserSignUp).Methods(http.MethodPost)

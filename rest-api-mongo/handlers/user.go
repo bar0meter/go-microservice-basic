@@ -9,6 +9,7 @@ import (
 	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
 
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/configs"
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/models"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/utils"
 	"github.com/gorilla/mux"
@@ -16,13 +17,14 @@ import (
 
 type UserHandler struct {
 	userRepo         models.UserRepository
+	log              *logging.LogWrapper
 	serverConfig     *configs.Config
 	messagingService protos.NotificationClient
 }
 
 func NewUserHandler(
-	userRepo models.UserRepository, serverConfig *configs.Config, mss protos.NotificationClient) *UserHandler {
-	return &UserHandler{userRepo, serverConfig, mss}
+	userRepo models.UserRepository, l *logging.LogWrapper, serverConfig *configs.Config, mss protos.NotificationClient) *UserHandler {
+	return &UserHandler{userRepo, l, serverConfig, mss}
 }
 
 func (u *UserHandler) GetUser(rw http.ResponseWriter, r *http.Request) {

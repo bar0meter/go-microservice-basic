@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/db"
+	"github.com/frost060/go-microservice-basic/basic-messaging-service/logging"
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/configs"
-	log "github.com/frost060/go-microservice-basic/basic-messaging-service/logging"
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/notifications"
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/notifications/email"
 	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
@@ -20,11 +20,12 @@ import (
 type MessageService struct {
 	config *configs.ServerConfig
 	Redis  *db.Redis
+	log    *logging.LogWrapper
 }
 
 // NewMessageService => returns a new message service
-func NewMessageService(config *configs.ServerConfig, redis *db.Redis) *MessageService {
-	return &MessageService{config, redis}
+func NewMessageService(config *configs.ServerConfig, redis *db.Redis, l *logging.LogWrapper) *MessageService {
+	return &MessageService{config, redis, l}
 }
 
 // SendNotification => Sends a notification without processing (dont add to queue)
@@ -53,7 +54,7 @@ func (ms *MessageService) SendNotification(
 	}
 
 	success, err := dispatcher.Dispatch()
-	log.Info(fmt.Sprintf("Success: %v, Error: %v", success, err))
+	ms.log.Info(fmt.Sprintf("Success: %v, Error: %v", success, err))
 
 	return &protos.MessageResponse{
 		Success: success,
@@ -82,13 +83,13 @@ type WorkerPool struct {
 	Pool chan Worker
 }
 
-func NewWorkerPool(noOfRoutines int) *WorkerPool {
+func (ms *MessageService) newWorkerPool(noOfRoutines int) *WorkerPool {
 	workerPool := make(chan Worker, noOfRoutines)
 	for i := 0; i < noOfRoutines; i++ {
 		worker := &Worker{
 			ID: i,
 		}
-		log.Info("Created worker with id %d", i)
+		ms.log.Info("Created worker with id %d", i)
 		workerPool <- *worker
 	}
 
@@ -98,8 +99,8 @@ func NewWorkerPool(noOfRoutines int) *WorkerPool {
 }
 
 // https://play.golang.org/p/HovNRgp6FxH
-func StartDispatchRedis(noOfRoutines int, redis *db.Redis, messageService *MessageService) {
-	workerPool := NewWorkerPool(noOfRoutines)
+func (ms *MessageService) StartDispatchRedis(noOfRoutines int, redis *db.Redis) {
+	workerPool := ms.newWorkerPool(noOfRoutines)
 	for {
 		worker := <-workerPool.Pool
 		go func() {
@@ -111,12 +112,12 @@ func StartDispatchRedis(noOfRoutines int, redis *db.Redis, messageService *Messa
 				return
 			}
 
-			resp, err := messageService.SendNotification(ctx, message)
+			resp, err := ms.SendNotification(ctx, message)
 			if err != nil || !resp.Success {
-				log.Error("Error occurred while dispatching message, pushing back to redis")
+				ms.log.Error("Error occurred while dispatching message, pushing back to redis")
 				_, _ = redis.Push(ctx, "default", message)
 			} else {
-				log.Info("Successfully sent message, by worker: %d", worker.ID)
+				ms.log.Info("Successfully sent message, by worker: %d", worker.ID)
 			}
 
 			workerPool.Pool <- worker

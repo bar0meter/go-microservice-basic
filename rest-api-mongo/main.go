@@ -2,15 +2,15 @@ package main
 
 import (
 	"context"
-	"google.golang.org/grpc"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
-	log "github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
+	"google.golang.org/grpc"
 
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/configs"
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/routes"
 	"github.com/joho/godotenv"
 
@@ -21,9 +21,10 @@ import (
 )
 
 func main() {
+	log := logging.NewLogger()
 	log.Info("Starting the application...")
 
-	repos := db.SetupRepositories()
+	repos := db.SetupRepositories(log)
 
 	log.Info("Loading configs from .env file")
 	if err := godotenv.Load(); err != nil {
@@ -45,7 +46,7 @@ func main() {
 
 	mssClient := protos.NewNotificationClient(conn)
 
-	router := routes.SetupRoutes(repos, serverConfigs, mssClient)
+	router := routes.SetupRoutes(repos, serverConfigs, mssClient, log)
 
 	// CORS
 	ch := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))

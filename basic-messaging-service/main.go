@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/frost060/go-microservice-basic/basic-messaging-service/db"
-	log "github.com/frost060/go-microservice-basic/basic-messaging-service/logging"
-	"github.com/joho/godotenv"
-	"google.golang.org/grpc/reflection"
 	"net"
 	"os"
+
+	"github.com/frost060/go-microservice-basic/basic-messaging-service/db"
+	"github.com/frost060/go-microservice-basic/basic-messaging-service/logging"
+	"github.com/joho/godotenv"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/frost060/go-microservice-basic/basic-messaging-service/configs"
 	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
@@ -16,6 +17,7 @@ import (
 )
 
 func main() {
+	log := logging.NewLogger()
 	log.Info("Starting notification service...")
 
 	log.Info("Loading configs from .env file")
@@ -31,7 +33,7 @@ func main() {
 
 	redis := db.NewRedisClient(serverConfig)
 
-	ms := server.NewMessageService(serverConfig, redis)
+	ms := server.NewMessageService(serverConfig, redis, log)
 	log.Info("Create new message service...")
 
 	protos.RegisterNotificationServer(gs, ms)
@@ -39,7 +41,7 @@ func main() {
 
 	reflection.Register(gs)
 
-	go server.StartDispatchRedis(2, redis, ms)
+	go ms.StartDispatchRedis(2, redis)
 
 	log.Info("Notification service running on port: 9092")
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", 9092))

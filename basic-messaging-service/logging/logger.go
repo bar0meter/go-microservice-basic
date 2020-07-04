@@ -8,11 +8,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	log *logrus.Logger
-)
+// LogWrapper wraps logrus logger. We can use this to wrap other logger also.
+type LogWrapper struct {
+	logrusLogger *logrus.Logger
+}
 
-func init() {
+// NewLogger returns a new LogWrapper instance
+// We are wrapping logrus logger here. But we can use this for any other loggers also.
+// We are also defining Info, Warn, Error methods for Wrapper.
+// Even though we change logger, we can still use log.Info, log.Warn,
+// log.Error methods without worrying about the logger
+func NewLogger() *LogWrapper {
+
+	// Here for development purpose we are overwriting log file
+	// While deploying to production, make sure to use append here
 	f, err := os.OpenFile("logs/application.log", os.O_RDWR|os.O_CREATE, 0666)
 	//f, err := os.OpenFile("logs/application.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
@@ -20,7 +29,7 @@ func init() {
 		logging.Fatalf("error opening file: %v", err)
 	}
 
-	log = &logrus.Logger{
+	log := &logrus.Logger{
 		Out:          os.Stderr,
 		Formatter:    new(logrus.TextFormatter),
 		Hooks:        make(logrus.LevelHooks),
@@ -30,21 +39,25 @@ func init() {
 
 	mw := io.MultiWriter(os.Stdout, f)
 	log.SetOutput(mw)
+
+	return &LogWrapper{
+		logrusLogger: log,
+	}
 }
 
 // Info ...
-func Info(format string, v ...interface{}) {
-	log.Infof(format, v...)
+func (lw *LogWrapper) Info(format string, v ...interface{}) {
+	lw.logrusLogger.Infof(format, v...)
 }
 
 // Warn ...
-func Warn(format string, v ...interface{}) {
-	log.Warnf(format, v...)
+func (lw *LogWrapper) Warn(format string, v ...interface{}) {
+	lw.logrusLogger.Warnf(format, v...)
 }
 
 // Error ...
-func Error(format string, v ...interface{}) {
-	log.Errorf(format, v...)
+func (lw *LogWrapper) Error(format string, v ...interface{}) {
+	lw.logrusLogger.Errorf(format, v...)
 }
 
 var (

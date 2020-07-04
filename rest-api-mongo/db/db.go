@@ -2,14 +2,15 @@ package db
 
 import (
 	"context"
-	log "github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 	"time"
+
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConnectDB() *mongo.Database {
+func ConnectDB(log *logging.LogWrapper) *mongo.Database {
 	log.Info("Connecting to mongodb...")
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.NewClient(clientOptions)

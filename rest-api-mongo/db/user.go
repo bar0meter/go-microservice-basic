@@ -2,7 +2,8 @@ package db
 
 import (
 	"context"
-	log "github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
+
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/models"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/utils"
 	"github.com/google/uuid"
@@ -14,12 +15,13 @@ import (
 // UserRepo model having user collection and logger instances
 type UserRepo struct {
 	Instance *mongo.Collection
+	log      *logging.LogWrapper
 }
 
 // NewUserRepo creates a new user repo
-func NewUserRepo(db *mongo.Database) *UserRepo {
+func NewUserRepo(db *mongo.Database, l *logging.LogWrapper) *UserRepo {
 	instance := db.Collection(USER)
-	return &UserRepo{instance}
+	return &UserRepo{instance, l}
 }
 
 // FindByID returns a user from db given user id
@@ -29,7 +31,7 @@ func (u *UserRepo) FindByID(id int64) (*models.User, error) {
 	err := u.Instance.FindOne(context.TODO(),
 		bson.M{models.ID: id}).Decode(&user)
 	if err != nil {
-		log.Error("FindByID, error occurred while querying DB", "error", err)
+		u.log.Error("FindByID, error occurred while querying DB", "error", err)
 		return nil, err
 	}
 
@@ -43,7 +45,7 @@ func (u *UserRepo) FindByUsername(username string) (*models.User, error) {
 	err := u.Instance.FindOne(context.TODO(),
 		bson.M{models.Username: username}).Decode(&user)
 	if err != nil {
-		log.Error("FindByUsername, error occurred while querying DB", "error", err)
+		u.log.Error("FindByUsername, error occurred while querying DB", "error", err)
 		return nil, err
 	}
 
@@ -58,11 +60,11 @@ func (u *UserRepo) Save(user *models.User) error {
 
 	updateResult, err := u.Instance.UpdateOne(context.TODO(), findQuery, &user, opts)
 	if err != nil {
-		log.Error("Error while saving document to users db", "error", err)
+		u.log.Error("Error while saving document to users db", "error", err)
 		return err
 	}
 
-	log.Info("Inserted a single user document: ", updateResult.UpsertedID)
+	u.log.Info("Inserted a single user document: ", updateResult.UpsertedID)
 	return nil
 }
 
@@ -76,13 +78,13 @@ func (u *UserRepo) ResetPassword(email string) (*utils.TagClaim, string, error) 
 
 	err := u.Instance.FindOne(context.TODO(), findQuery).Decode(&user)
 	if err != nil {
-		log.Error("RestPassword, error occurred while querying DB", "error", err)
+		u.log.Error("RestPassword, error occurred while querying DB", "error", err)
 		return nil, "", nil
 	}
 
 	uuidToken, err := uuid.NewRandom()
 	if err != nil {
-		log.Error("ResetPassword, error occurred while setting reset password uuid token", "error", err)
+		u.log.Error("ResetPassword, error occurred while setting reset password uuid token", "error", err)
 		return nil, "", err
 	}
 
@@ -92,7 +94,7 @@ func (u *UserRepo) ResetPassword(email string) (*utils.TagClaim, string, error) 
 	}}
 	_, err = u.Instance.UpdateOne(context.TODO(), findQuery, updateQuery, opts)
 	if err != nil {
-		log.Error("ResetPassword, error occurred while setting reset password uuid token", "error", err)
+		u.log.Error("ResetPassword, error occurred while setting reset password uuid token", "error", err)
 		return nil, "", err
 	}
 
@@ -127,7 +129,7 @@ func (u *UserRepo) VerifyUser(userID int64, email string) (*utils.TagClaim, stri
 
 	uuidToken, err := uuid.NewRandom()
 	if err != nil {
-		log.Error("VerifyUser, error occurred while setting verify email uuid token", "error", err)
+		u.log.Error("VerifyUser, error occurred while setting verify email uuid token", "error", err)
 		return nil, "", err
 	}
 

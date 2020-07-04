@@ -3,10 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
 	"net/http"
 	"strconv"
 
+	protos "github.com/frost060/go-microservice-basic/basic-messaging-service/protos/notifications"
+
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/models"
 	"github.com/gorilla/mux"
 )
@@ -14,12 +16,13 @@ import (
 // TodoHandler model
 type TodoHandler struct {
 	todoRepo         models.TodoRepository
+	log              *logging.LogWrapper
 	messagingService protos.NotificationClient
 }
 
 // NewTodoHandler creates a new TodoHandler for handling route '/todo'
-func NewTodoHandler(todoRepo models.TodoRepository, mss protos.NotificationClient) *TodoHandler {
-	return &TodoHandler{todoRepo, mss}
+func NewTodoHandler(todoRepo models.TodoRepository, l *logging.LogWrapper, mss protos.NotificationClient) *TodoHandler {
+	return &TodoHandler{todoRepo, l, mss}
 }
 
 // GetAllTodos returns all the todos

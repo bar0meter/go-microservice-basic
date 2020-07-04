@@ -1,5 +1,7 @@
 package db
 
+import "github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
+
 const (
 	TODO = "todos"
 	USER = "users"
@@ -12,12 +14,12 @@ type Repositories struct {
 }
 
 // SetupRepositories , connects to DB and return instance of all the collections
-func SetupRepositories() *Repositories {
-	db := ConnectDB()
+func SetupRepositories(log *logging.LogWrapper) *Repositories {
+	db := ConnectDB(log)
 
 	// Repositories
-	todoRepo := NewTodoRepo(db)
-	userRepo := NewUserRepo(db)
+	todoRepo := NewTodoRepo(db, log)
+	userRepo := NewUserRepo(db, log)
 
 	return &Repositories{
 		UserRepo: userRepo,

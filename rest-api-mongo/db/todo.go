@@ -2,7 +2,8 @@ package db
 
 import (
 	"context"
-	log "github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
+
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
 
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/models"
 	"github.com/frost060/go-microservice-basic/rest-api-mongo/utils"
@@ -13,12 +14,13 @@ import (
 // TodoRepo model having todo collection and logger instances
 type TodoRepo struct {
 	Instance *mongo.Collection
+	log      *logging.LogWrapper
 }
 
 // NewTodoRepo creates a new todo repo
-func NewTodoRepo(db *mongo.Database) *TodoRepo {
+func NewTodoRepo(db *mongo.Database, l *logging.LogWrapper) *TodoRepo {
 	instance := db.Collection(TODO)
-	return &TodoRepo{instance}
+	return &TodoRepo{instance, l}
 }
 
 // GetAll returns all the todo from db
@@ -49,7 +51,7 @@ func (t *TodoRepo) Get(id int64) (*models.Todo, error) {
 	err := t.Instance.FindOne(context.TODO(),
 		bson.M{"_id": id}).Decode(&todo)
 	if err != nil {
-		log.Error("Error occurred while querying DB", "error", err)
+		t.log.Error("Error occurred while querying DB", "error", err)
 		return nil, err
 	}
 
@@ -61,11 +63,11 @@ func (t *TodoRepo) Save(todo *models.Todo) error {
 	todo.ID = utils.GenerateID()
 	insertResult, err := t.Instance.InsertOne(context.TODO(), &todo)
 	if err != nil {
-		log.Error("Error while saving document to todo db", "error", err)
+		t.log.Error("Error while saving document to todo db", "error", err)
 		return err
 	}
 
-	log.Info("Inserted a single todo document: ", insertResult.InsertedID)
+	t.log.Info("Inserted a single todo document: ", insertResult.InsertedID)
 	return nil
 }
 

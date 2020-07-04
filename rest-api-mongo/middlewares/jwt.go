@@ -3,19 +3,21 @@ package middlewares
 import (
 	"context"
 	"fmt"
-	"github.com/frost060/go-microservice-basic/rest-api-mongo/configs"
-	log "github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
-	"github.com/frost060/go-microservice-basic/rest-api-mongo/utils"
 	"net/http"
 	"time"
+
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/configs"
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/logging"
+	"github.com/frost060/go-microservice-basic/rest-api-mongo/utils"
 )
 
 type JWTMiddleWare struct {
 	jwtConfig *configs.JWTConfig
+	log       *logging.LogWrapper
 }
 
-func NewJWTMiddleWare(jwtConfig *configs.JWTConfig) *JWTMiddleWare {
-	return &JWTMiddleWare{jwtConfig}
+func NewJWTMiddleWare(jwtConfig *configs.JWTConfig, l *logging.LogWrapper) *JWTMiddleWare {
+	return &JWTMiddleWare{jwtConfig, l}
 }
 
 // Middleware for jwt validation and token refresh
@@ -45,8 +47,8 @@ func (jwt *JWTMiddleWare) ValidateAndRefreshToken(next http.Handler) http.Handle
 			return
 		}
 
-		log.Info(fmt.Sprintf("User Payload in request cookie: %v", jwtClaim.Username))
-		log.Info(fmt.Sprintf("Refreshed token: %s", newToken))
+		jwt.log.Info(fmt.Sprintf("User Payload in request cookie: %v", jwtClaim.Username))
+		jwt.log.Info(fmt.Sprintf("Refreshed token: %s", newToken))
 		http.SetCookie(response, &http.Cookie{
 			Name:    "token",
 			Value:   newToken,
